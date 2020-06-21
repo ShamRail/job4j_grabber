@@ -5,7 +5,7 @@ import java.util.Objects;
 
 public class Post {
 
-    private String lineText;
+    private String linkText;
 
     private String link;
 
@@ -17,19 +17,19 @@ public class Post {
 
     }
 
-    public Post(String lineText, String link, String description, Timestamp createDate) {
-        this.lineText = lineText;
+    public Post(String linkText, String link, String description, Timestamp createDate) {
+        this.linkText = linkText;
         this.link = link;
         this.description = description;
         this.createDate = createDate;
     }
 
-    public String getLineText() {
-        return lineText;
+    public String getLinkText() {
+        return linkText;
     }
 
-    public void setLineText(String lineText) {
-        this.lineText = lineText;
+    public void setLinkText(String linkText) {
+        this.linkText = linkText;
     }
 
     public String getLink() {
@@ -71,5 +71,10 @@ public class Post {
     @Override
     public int hashCode() {
         return Objects.hash(link);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("name: %s, date: %s", linkText, createDate);
     }
 }
