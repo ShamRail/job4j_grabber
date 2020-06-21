@@ -11,51 +11,59 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SqlRuParse {
+public class SqlRuParse implements Parse {
 
     private static final int POST_LIST_TOPIC = 1;
 
     private static final int DATE_TIME = 5;
 
     private static final int LINK = 0;
-    public static final int MSG_TEXT = 1;
 
-    public static void main(String[] args) throws Exception {
-        for (int page = 1; page <= 5; page++) {
-            String url = String.format("https://www.sql.ru/forum/job-offers/%d", page);
-            parsePage(url);
-        }
-    }
+    private static final int MSG_TEXT = 1;
 
-    private static List<Post> parsePage(String url) throws IOException {
+    @Override
+    public List<Post> list(String url) {
         List<Post> posts = new ArrayList<>();
-        Document doc = Jsoup.connect(url).get();
-        Elements tableRows = doc.select(".forumTable").first().getElementsByTag("tr");
-        for (Element row : tableRows) {
-            Element postListTopic = row.child(POST_LIST_TOPIC);
-            if (postListTopic.hasClass("postslisttopic")) {
-                Element date = row.child(DATE_TIME);
-                Element linkElement = postListTopic.child(LINK);
-                String link = linkElement.attr("href");
-                String text = linkElement.text();
-                String description = parseDescription(link);
-                posts.add(new Post(
-                        text, link, description, DateUtils.parse(date.text())
-                ));
-                System.out.println(String.format("%s %s %s", link, text, date.text()));
-                System.out.println(description);
-                System.out.println();
+        try {
+            Document doc = Jsoup.connect(url).get();
+            Elements tableRows = doc.select(".forumTable").first().getElementsByTag("tr");
+            for (Element row : tableRows) {
+                Element postListTopic = row.child(POST_LIST_TOPIC);
+                if (postListTopic.hasClass("postslisttopic")) {
+                    Element date = row.child(DATE_TIME);
+                    Element linkElement = postListTopic.child(LINK);
+                    String link = linkElement.attr("href");
+                    String text = linkElement.text();
+                    posts.add(new Post(
+                            text, link, "", DateUtils.parse(date.text())
+                    ));
+                    System.out.println(String.format("%s %s %s", link, text, date.text()));
+                    System.out.println();
+                }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
         return posts;
     }
 
-    private static String parseDescription(String url) throws IOException {
-        Document doc = Jsoup.connect(url).get();
-        return doc
-                .select(".msgTable").first()
-                .select(".msgBody").get(MSG_TEXT)
-                .text();
+    @Override
+    public Post detail(String url) {
+        Post post = new Post();
+        try {
+            Document doc = Jsoup.connect(url).get();
+            Elements comments = doc.select(".msgTable");
+            String description = comments.first().select(".msgBody").get(MSG_TEXT).text();
+            String name = comments.first().select(".messageHeader").text();
+            String date = comments.last().select(".msgFooter").text();
+            date = date.substring(0, date.indexOf('[') - 1);
+            return new Post(
+                    name, url, description, DateUtils.parse(date)
+            );
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return post;
     }
-
 }
