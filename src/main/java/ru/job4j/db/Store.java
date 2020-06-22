@@ -6,6 +6,7 @@ import java.util.List;
 
 public interface Store {
     void save(Post post);
-    List<Post> getAll();
+    void saveAll(Iterable<Post> posts);
+    List<Post> findAll();
     Post findById(String id);
 }

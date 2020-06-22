@@ -13,7 +13,7 @@ import static org.quartz.SimpleScheduleBuilder.*;
 
 public class AlertRabbit {
     public static void main(String[] args) {
-        ConfigManager configManager = new ConfigManager("rabbit.properties");
+        ConfigManager configManager = new ConfigManager("app.properties");
         try (Connection connection = initConnection(configManager)) {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
             scheduler.start();

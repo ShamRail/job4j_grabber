@@ -5,6 +5,8 @@ import java.util.Objects;
 
 public class Post {
 
+    private String id;
+
     private String linkText;
 
     private String link;
@@ -54,6 +56,14 @@ public class Post {
 
     public void setCreateDate(Timestamp createDate) {
         this.createDate = createDate;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     @Override
