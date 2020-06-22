@@ -1,5 +1,6 @@
 package ru.job4j.grabber;
 
+import com.sun.net.httpserver.HttpServer;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import ru.job4j.db.PsqlStore;
@@ -10,10 +11,14 @@ import ru.job4j.model.Post;
 import ru.job4j.quartz.ConfigManager;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.StringJoiner;
+import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -109,11 +114,61 @@ public class Grabber implements Grab {
         }
     }
 
+    public void web(Store store) {
+        try {
+            HttpServer server = HttpServer.create(new InetSocketAddress("localhost", 9000), 0);
+            server.createContext("/vacancies", exchange -> {
+                List<Post> posts = store.findAll();
+                StringJoiner html = new StringJoiner(System.lineSeparator());
+                html.add("<!DOCTYPE html>");
+                html.add("<html>");
+                html.add("<head>");
+                html.add("<meta charset=\"UTF-8\">");
+                html.add("<title>Vacancies</title>");
+                html.add("</head>");
+                html.add("<body>");
+
+                html.add("<table style=\"border: 1px solid black;\">");
+                html.add("<tr style=\"border: 1px solid black;\">");
+                html.add("<th style=\"border: 1px solid black;\">Name</th>");
+                html.add("<th style=\"border: 1px solid black;\">Date</th>");
+                html.add("<th style=\"border: 1px solid black;\">Description</th>");
+                html.add("</tr>");
+
+                for (Post post : posts) {
+                    html.add("<tr style=\"border: 1px solid black;\">");
+                    html.add(String.format("<td style=\"border: 1px solid black;\"><a href=\"%s\">%s</a></td>", post.getLink(), post.getLinkText()));
+                    html.add(String.format("<td style=\"border: 1px solid black;\">%s</td>", post.getCreateDate()));
+                    html.add(String.format("<td style=\"border: 1px solid black;\">%s</td>", post.getDescription()));
+                    html.add("</tr>");
+                }
+
+                html.add("</table>");
+
+                html.add("</body>");
+                html.add("</html>");
+
+                byte[] bytes = html.toString().getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().put("Content-Type", List.of("text/html", "charset=UTF-8"));
+                exchange.sendResponseHeaders(200, bytes.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(bytes);
+                    os.flush();
+                }
+            });
+            server.setExecutor(Executors.newFixedThreadPool(10));
+            server.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         Grabber grab = new Grabber();
         grab.cfg();
         Scheduler scheduler = grab.scheduler();
         Store store = grab.store();
         grab.init(new SqlRuParse(), store, scheduler);
+        grab.web(store);
     }
 }

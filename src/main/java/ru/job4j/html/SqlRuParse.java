@@ -71,7 +71,7 @@ public class SqlRuParse implements Parse {
         try {
             Document doc = Jsoup.connect(url).get();
             Elements comments = doc.select(".msgTable");
-            String description = comments.first().select(".msgBody").get(MSG_TEXT).text();
+            String description = comments.first().select(".msgBody").get(MSG_TEXT).html();
             String name = comments.first().select(".messageHeader").text();
             String date = comments.last().select(".msgFooter").text();
             date = date.substring(0, date.indexOf('[') - 1);
